@@ -1,25 +1,14 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {View, StatusBar, Text, Image, StyleSheet, Platform} from 'react-native';
+import {View, StatusBar, Text, StyleSheet, Platform} from 'react-native';
 
-const NAV_BAR_HEIGHT_ANDROID = 50; //ANDROID下的高度
-const NAV_BAR_HEIGHT_IOS = 44; // IOS下的高度
-const STATUS_BAR_HEIGHT = 20; // 状态栏的高度
+const tarH = Platform.OS === 'ios' ? 44 : 50;
 const StatusBarShape = {
   backgroundColor: PropTypes.string,
   barStyle: PropTypes.oneOf(['default', 'light-content', 'dark-content']),
   hidden: PropTypes.bool,
 };
-export default class NavigationBar extends Component {
-  static PropTypes = {
-    style: PropTypes.style,
-    title: PropTypes.string,
-    titleView: PropTypes.element,
-    hide: PropTypes.bool,
-    leftButton: PropTypes.element,
-    rightButton: PropTypes.element,
-    statusBar: PropTypes.shape(StatusBarShape),
-  };
+class NavigationBar extends Component {
   static defaultProps = {
     statusBar: {
       barStyle: 'light-content',
@@ -55,13 +44,24 @@ export default class NavigationBar extends Component {
       </View>
     );
     return (
-      <View style={[styles.container, this.props.style]}>
+      <View style={[styles.container, this.props.styles]}>
         {statusBar}
         {content}
       </View>
     );
   }
 }
+
+NavigationBar.propTypes = {
+  title: PropTypes.string,
+  titleView: PropTypes.element,
+  hide: PropTypes.bool,
+  leftButton: PropTypes.element,
+  rightButton: PropTypes.element,
+  statusBar: PropTypes.shape(StatusBarShape),
+  titleStyle: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
+};
+
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#f00',
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     paddingRight: 10,
     alignItems: 'center',
     backgroundColor: '#fff',
-    height: Platform.OS === 'ios' ? NAV_BAR_HEIGHT_IOS : NAV_BAR_HEIGHT_ANDROID,
+    height: tarH,
     justifyContent: 'space-between',
     flexDirection: 'row',
   },
@@ -93,3 +93,5 @@ const styles = StyleSheet.create({
     color: '#333',
   },
 });
+
+export default NavigationBar;

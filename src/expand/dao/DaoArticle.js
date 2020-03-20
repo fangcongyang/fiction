@@ -23,14 +23,14 @@ export default {
         currCollect = new Array();
       }
       currCollect.push(value);
-      LocalStorageUtils.set(this.COLLECTTOP_KEY, currCollect);
+      LocalStorageUtils.setItem(this.COLLECTTOP_KEY, currCollect);
     });
   },
   createdTocStr(article) {
     return `${article.title}-${article.author}`;
   },
   async getCollectToc() {
-    return LocalStorageUtils.get(this.COLLECTTOP_KEY);
+    return LocalStorageUtils.getItem(this.COLLECTTOP_KEY);
   },
   /**
    * 文章是否已经被收藏过
@@ -72,7 +72,7 @@ export default {
    * 获取收藏的所有文章
    */
   getCollectArticle() {
-    return Array.from(LocalStorageUtils.get(this.COLLECT_KEY));
+    return Array.from(LocalStorageUtils.getItem(this.COLLECT_KEY));
   },
   getArticleByTagrteDate(date) {
     const url = `https://interface.meiriyiwen.com/article/day?dev=1&date=${date}`;

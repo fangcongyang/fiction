@@ -1,7 +1,7 @@
 import {AsyncStorage} from '@react-native-community/async-storage';
 export default {
   constructor() {},
-  get(key) {
+  getItem(key) {
     try {
       if (!key) {
         return {};
@@ -17,7 +17,7 @@ export default {
       return {};
     }
   },
-  set(key, value) {
+  setItem(key, value) {
     try {
       if (!key) {
         return;
