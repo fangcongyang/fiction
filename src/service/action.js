@@ -8,26 +8,29 @@ import {
   GetFriend,
 } from '../redux/actionCreators';
 import ApiUtil from '../service/ApiUtil';
+import fetch from '../common/fetch';
+import LocalStorageUtil from '../common/LocalStorageUtil';
 
 export const login = param => dispatch => {
   dispatch(LoginStart());
-
-  ApiUtil.request('login', param)
+  let formData = new FormData();
+  formData.append('mobile', param.mobile);
+  formData.append('password', param.password);
+  fetch
+    .post('login', formData)
     .then(async result => {
-      if (result.data.errno === 0) {
-        const {
-          access_token,
-          refresh_token,
-          access_expire,
-          refresh_expire,
-        } = result.data.data;
-        dispatch(LoginSuccess(result.data));
+      if (result.code == 0) {
+        LocalStorageUtil.setItem('tokenId', result.data.tokenId);
+        LocalStorageUtil.setItem('mobile', result.data.mobile);
+        dispatch(LoginSuccess(result));
       } else {
-        dispatch(LoginFail(result.data));
+        dispatch(LoginFail(result));
       }
     })
-    .catch(() => {
-      dispatch(LoginFail());
+    .catch(err => {
+      dispatch(LoginFail({
+        msg: err.message
+      }));
     });
 };
 

@@ -1,16 +1,18 @@
 /*
- * 文件名: AppContainer.js
- * 作者: liushun
+ * 文件名: userMore.js
+ * 作者: fangcy
  * 描述: 用户详情页
  * 修改人:
  * 修改时间:
  * 修改内容:
  * */
 import React from 'react';
-import {Header, ListItem} from 'react-native-elements';
-import {TouchableOpacity} from 'react-native';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import {ListItem} from 'react-native-elements';
+import NavigtionBar from '../components/NavigationBar';
+import {TouchableOpacity, Text} from 'react-native';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 import MainView from '../components/MainView';
+import {connect} from 'react-redux';
 
 class UserMoreView extends React.Component {
   constructor(props) {
@@ -20,33 +22,60 @@ class UserMoreView extends React.Component {
   render() {
     return (
       <MainView style={{marginTop: 0}}>
-        <Header
-          placement="left"
-          leftComponent={
+        <NavigtionBar
+          titleStyle={{color: '#000'}}
+          leftButton={
             <TouchableOpacity
               onPress={() => {
                 this.props.navigation.goBack();
               }}>
-              <FontAwesome name={'angle-left'} size={20} color={'black'} />
+              <AntDesign
+                name={'left'}
+                size={20}
+                color="#000"
+              />
             </TouchableOpacity>
           }
-          centerComponent={{text: '更多信息', style: {color: 'black'}}}
-          containerStyle={{
+          navBar={{
             backgroundColor: 'rgb(238, 238, 238)',
-            justifyContent: 'space-around',
           }}
+          title={'更多信息'}
+          titleStyle={{alignItems: 'flex-start', fontSize: 16}}
+          statusBar={{}}
         />
-        <ListItem title={'性别'} rightTitle={'男'} bottomDivider chevron />
-        <ListItem title={'地区'} rightTitle={'中国'} bottomDivider chevron />
+        <ListItem bottomDivider>
+          <ListItem.Content>
+            <ListItem.Title>性别</ListItem.Title>
+          </ListItem.Content>
+          <Text>{this.props.user.sex === 2 ? '男' : this.props.user.sex === 1 ? '女' : '未知'}</Text>
+          <ListItem.Chevron />
+        </ListItem>
         <ListItem
-          title={'个性签名'}
-          rightTitle={'哈哈哈'}
-          bottomDivider
-          chevron
-        />
+          bottomDivider>
+          <ListItem.Content>
+            <ListItem.Title>昵称</ListItem.Title>
+          </ListItem.Content>
+          <Text>{this.props.user.nickName}</Text>
+          <ListItem.Chevron />
+        </ListItem>
+        <ListItem
+          bottomDivider>
+          <ListItem.Content>
+            <ListItem.Title>个性签名</ListItem.Title>
+          </ListItem.Content>
+          <Text>哈哈哈</Text>
+          <ListItem.Chevron />
+        </ListItem>
       </MainView>
     );
   }
 }
 
-export default UserMoreView;
+const mapState = state => ({
+  user: state.UserReducer.get('user').toJS(),
+});
+
+export default connect(
+  mapState,
+  null,
+)(UserMoreView);

@@ -14,10 +14,10 @@ import getStyle from './Style/LoginViewStyle';
 import {connect} from 'react-redux';
 import {login} from '../service/action';
 import LinearGradient from 'react-native-linear-gradient';
-import {Button} from 'react-native-elements';
-import {Input} from 'react-native-elements';
+import {Button, Input} from 'react-native-elements';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Toast from 'react-native-root-toast';
+import MD5 from "react-native-md5"; 
 
 let Styles = {};
 const input = React.createRef();
@@ -30,14 +30,14 @@ class LoginView extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      username: '',
+      mobile: '',
       nameError: '',
       password: '',
       passError: '',
     };
   }
 
-  componentWillReceiveProps(nextProps) {
+  UNSAFE_componentWillReceiveProps(nextProps) {
     if (!nextProps.loading) {
       Toast.show(nextProps.tip, {
         duration: Toast.durations.SHORT,
@@ -49,7 +49,7 @@ class LoginView extends React.Component {
     }
   }
 
-  componentDidMount(): void {
+  componentDidMount() {
     input.current.focus();
   }
 
@@ -63,7 +63,7 @@ class LoginView extends React.Component {
       });
       return;
     }
-
+    user.password = MD5.hex_md5(user.password);
     this.props.login(user);
   };
 
@@ -89,10 +89,10 @@ class LoginView extends React.Component {
               onChangeText={text => {
                 this.setState(
                   {
-                    username: text,
+                    mobile: text,
                   },
                   () => {
-                    if (!this.state.username) {
+                    if (!this.state.mobile) {
                       this.setState({
                         nameError: msg.nameError,
                       });
@@ -106,6 +106,7 @@ class LoginView extends React.Component {
               }}
             />
             <Input
+              textContentType='password'
               placeholder="密码"
               leftIcon={
                 <FontAwesome name="lock" size={24} color="rgb(66, 122, 184)" />
@@ -113,6 +114,7 @@ class LoginView extends React.Component {
               errorStyle={{color: 'red'}}
               errorMessage={this.state.passError}
               leftIconContainerStyle={{marginRight: 10}}
+              secureTextEntry={true} 
               value={this.state.password}
               onChangeText={text => {
                 this.setState(

@@ -1,8 +1,8 @@
 import React, {Component} from 'react';
 import NavigtionBar from '../../components/NavigationBar';
-import MainView from '../../components/MainView';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Line from '../../components/Line';
+import LocalStorageUtil from '../../common/LocalStorageUtil';
 import {
   View,
   FlatList,
@@ -47,14 +47,29 @@ class ChapterList extends Component {
       fictionId: this.props.navigation.state.params.fictionId,
     };
   }
-  UNSAFE_componentWillMount() {
-    fetch
-      .get('fictionChapter', {fictionId: this.state.fictionId})
-      .then(value => {
-        this.setState({
-          chapterList: value,
-        });
-      });
+  componentDidMount() {
+    LocalStorageUtil.getItem('tokenId').then(tokenId => {
+      fetch
+        .get('fictionChapter', {
+          fictionId: this.state.fictionId,
+          tokenId: tokenId,
+        })
+        .then(value => {
+          this.setState({
+            chapterList: value.data,
+          });
+        })
+        .catch(err => {
+          Toast.show(err.message, {
+            duration: Toast.durations.SHORT,
+            position: Toast.positions.CENTER,
+            shadow: true,
+            animation: true,
+            hideOnPress: true,
+            delay: 0,
+          });
+        });;
+    });
   }
   getChapterItem(props) {
     return (
@@ -62,7 +77,10 @@ class ChapterList extends Component {
         style={sortItemStyle.item}
         onPress={this.gotoReaderPage.bind(this, props)}>
         <Text style={sortItemStyle.name}>
-          第{props.sort}章. {props.name}
+          第{props.sort}章.{' '}
+          {props.name.length > 18
+            ? props.name.substr(0, 16) + '...'
+            : props.name}
         </Text>
         <AntDesign
           style={sortItemStyle.addFont}
@@ -87,7 +105,7 @@ class ChapterList extends Component {
   };
   render() {
     let leftBackBtn = (
-      <TouchableOpacity style={{padding: 8}} onPress={this.back}>
+      <TouchableOpacity style={{paddingTop: 4, paddingBottom: 4, flex: 1,}} onPress={this.back}>
         <Image
           style={{width: 26, height: 26}}
           source={require('../../res/images/ic_arrow_back_white_36pt.png')}
@@ -95,30 +113,34 @@ class ChapterList extends Component {
       </TouchableOpacity>
     );
     return (
-      <MainView style={{marginTop: 0}}>
-        <View style={{flxe: 1}}>
-          <NavigtionBar
-            titleStyle={{color: '#fff'}}
-            navBar={{
-              backgroundColor: '#3e9ce9',
-            }}
-            leftButton={leftBackBtn}
-            title={'章节信息'}
-            statusBar={{}}
-          />
-          <FlatList
-            ItemSeparatorComponent={() => (
-              <View style={sortItemStyle.separator} />
-            )}
-            horizontal={false}
-            showsHorizontalScrollIndicator={false}
-            data={this.state.chapterList}
-            keyExtractor={(item, index) => item.id}
-            renderItem={({item}) => this.getChapterItem(item)}
-            ListFooterComponent={this.footer}
-          />
-        </View>
-      </MainView>
+      <View style={{flex: 1}}>
+        <NavigtionBar
+          style={{
+            flex: 1,
+          }}
+          titleStyle={{color: '#fff'}}
+          navBar={{
+            backgroundColor: '#3e9ce9',
+          }}
+          leftButton={leftBackBtn}
+          title={'章节信息'}
+          statusBar={{}}
+        />
+        <FlatList
+          style={{
+            flex: 1,
+          }}
+          ItemSeparatorComponent={() => (
+            <View style={sortItemStyle.separator} />
+          )}
+          horizontal={false}
+          showsHorizontalScrollIndicator={false}
+          data={this.state.chapterList}
+          keyExtractor={item => item.id}
+          renderItem={({item}) => this.getChapterItem(item)}
+          ListFooterComponent={this.footer}
+        />
+      </View>
     );
   }
 }

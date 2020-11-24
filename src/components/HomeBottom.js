@@ -32,7 +32,7 @@ class HomeBottom extends React.Component {
     return (
       <View>
         <FontAwesome
-          name={'wechat'}
+          name={'home'}
           color={this.props.focused ? 'rgb(66, 122, 184)' : 'black'}
           size={20}
         />

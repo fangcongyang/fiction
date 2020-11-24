@@ -8,17 +8,43 @@
  * */
 
 import React from 'react';
-import {Button, Header} from 'react-native-elements';
-import MainView from '../components/MainView';
-import {TouchableOpacity} from 'react-native';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import {Button} from 'react-native-elements';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+import {
+  TouchableOpacity, 
+  Switch, 
+  StyleSheet,
+  Text,
+  View} from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
 import ApiUtil from '../service/ApiUtil';
 import {connect} from 'react-redux';
 import Toast from 'react-native-root-toast';
+import NavigtionBar from '../components/NavigationBar';
 const Api = ApiUtil.api();
-import {LoginOut} from '../redux/actionCreators';
+import {LoginOut, ChangeTheme} from '../redux/actionCreators';
 
+const styles = StyleSheet.create({
+  item: {
+    height: 50,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  separator: {
+    backgroundColor: '#eee',
+    height: 10,
+  },
+  name: {
+    marginLeft: 20,
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+  },
+  switch: {
+    flex: 1,
+  },
+});
 class SettingView extends React.Component {
   constructor(props) {
     super(props);
@@ -44,44 +70,74 @@ class SettingView extends React.Component {
     this.props.navigation.navigate('LoginView');
   };
 
+  onDayModeClick = () => {
+    this.props.ChangeTheme({
+      isNight: !this.props.isNight
+    })
+  };
+
   render() {
     return (
-      <MainView style={{marginTop: 0}}>
-        <Header
-          placement="left"
-          leftComponent={
+      <View>
+        <NavigtionBar
+          titleStyle={{color: '#000'}}
+          leftButton={
             <TouchableOpacity
               onPress={() => {
                 this.props.navigation.goBack();
               }}>
-              <FontAwesome name={'angle-left'} size={20} color={'black'} />
+              <AntDesign
+                name={'left'}
+                size={20}
+                color="#000"
+              />
             </TouchableOpacity>
           }
-          centerComponent={{text: '设置', style: {color: 'black'}}}
-          containerStyle={{
+          navBar={{
             backgroundColor: 'rgb(238, 238, 238)',
-            justifyContent: 'space-around',
           }}
+          title={'设置'}
+          titleStyle={{alignItems: 'flex-start', fontSize: 16}}
+          statusBar={{}}
         />
+          <View
+            style={styles.item}>
+            <Text style={styles.name}>
+              主题：{this.props.isNight? '黑夜' : '白天'}
+            </Text>
+            <Switch
+              onTintColor={'#ffaa11'}
+              tintColor={'#aaaa11'}
+              value={this.props.isNight}
+              onValueChange={this.onDayModeClick}
+              testID={'one'}
+              thumbTintColor={'#ff1111'}/>
+        </View>
+        <View style={styles.separator} />
+        
         <Button
           title="退出"
           buttonStyle={{backgroundColor: 'white'}}
           titleStyle={{color: 'black'}}
           onPress={this.loginOut}
         />
-      </MainView>
+      </View>
     );
   }
 }
 
 const mapState = state => ({
   user: state.UserReducer.get('user'),
+  isNight: state.ThemeReducer.get('isNight'),
 });
 
 const mapDispatch = dispatch => ({
   logout() {
     dispatch(LoginOut());
   },
+  ChangeTheme(param){
+    dispatch(ChangeTheme(param));
+  }
 });
 
 export default connect(

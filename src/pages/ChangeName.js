@@ -1,8 +1,9 @@
 import React from 'react';
 import MainView from '../components/MainView';
+import NavigtionBar from '../components/NavigationBar';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 import {TouchableOpacity} from 'react-native';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import {Button, Header, Input} from 'react-native-elements';
+import {Button, Input} from 'react-native-elements';
 import ApiUtil from '../service/ApiUtil';
 import {UpdateUser} from '../redux/actionCreators';
 import {connect} from 'react-redux';
@@ -40,22 +41,27 @@ class ChangeName extends React.Component {
   render() {
     return (
       <MainView style={{marginTop: 0}}>
-        <Header
-          placement="left"
-          leftComponent={
+        <NavigtionBar
+          titleStyle={{color: '#000'}}
+          leftButton={
             <TouchableOpacity
               onPress={() => {
                 this.props.navigation.goBack();
               }}>
-              <FontAwesome name={'angle-left'} size={20} color={'black'} />
+              <AntDesign
+                name={'left'}
+                size={20}
+                color="#000"
+              />
             </TouchableOpacity>
           }
-          centerComponent={{text: '更改名字', style: {color: 'black'}}}
-          containerStyle={{
+          navBar={{
             backgroundColor: 'rgb(238, 238, 238)',
-            justifyContent: 'space-around',
           }}
-          rightComponent={
+          title={'更改名字'}
+          titleStyle={{alignItems: 'flex-start', fontSize: 16}}
+          statusBar={{}}
+          rightButton={
             <Button
               title={'保存'}
               titleStyle={{fontSize: 14}}

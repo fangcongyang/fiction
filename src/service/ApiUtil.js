@@ -1,5 +1,4 @@
 import Api from './index';
-import {storage} from '../utils/storageToken';
 
 class ApiUtil {
   static api() {
@@ -20,7 +19,6 @@ class ApiUtil {
             syncInBackground: false,
           })
           .then(access_token => {
-            // console.tron.log(`read access_token:${access_token}`)
             Api.setToken(access_token);
             resolve('success');
           });

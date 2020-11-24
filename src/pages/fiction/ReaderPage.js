@@ -6,6 +6,8 @@ import fetch from '../../common/fetch';
 import Toast from 'react-native-root-toast';
 import {EasyLoading, Loading} from '../../components/EasyLoading';
 import Slider from '@react-native-community/slider';
+import LocalStorageUtil from '../../common/LocalStorageUtil';
+import {connect} from 'react-redux';
 import {
   View,
   TouchableOpacity,
@@ -15,13 +17,14 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
-
+import {
+  ChangeTheme
+} from '../../redux/actionCreators';
 import NavigtionBar from '../../components/NavigationBar';
 import Line from '../../components/Line';
 
 const screenW = Dimensions.get('window').width;
 const screenH = Dimensions.get('window').height;
-const ImageWH = screenW * 0.35; // 图片大小
 
 const styles = StyleSheet.create({
   endText: {
@@ -30,16 +33,11 @@ const styles = StyleSheet.create({
   content: {
     width: screenW - 20,
     marginLeft: 10,
-    marginTop: 20,
     lineHeight: 30,
   },
   menu: {
     justifyContent: 'flex-end',
     margin: 0,
-  },
-  chapterAddFont: {
-    position: 'absolute',
-    marginLeft: ImageWH * 0.05,
   },
 
   //目录列表相关样式
@@ -54,7 +52,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export default class ReadPage extends Component {
+class ReadPage extends Component {
   _flatList;
   constructor(props) {
     super(props);
@@ -62,8 +60,6 @@ export default class ReadPage extends Component {
       fontSizeStyle: {
         contentFontSize: 18,
       },
-      bgColor: '#e4cba3',
-      fontColor: '#333',
       chapter: this.props.navigation.state.params.chapter,
       chapters: this.props.navigation.state.params.chapters,
       content: null,
@@ -71,8 +67,6 @@ export default class ReadPage extends Component {
       sliderShow: false,
       setVisible: false,
       title: '',
-      isNight: false,
-      thresholdFontSize: 2,
       sliderValue: this.props.navigation.state.params.chapter.sort,
       contentOffset: {
         x: 0,
@@ -80,35 +74,44 @@ export default class ReadPage extends Component {
       },
     };
   }
-  UNSAFE_componentWillMount() {
+  componentDidMount() {
     this.initReadPage(this.state.chapter.id);
   }
   initReadPage = chapterId => {
-    fetch.get('fictionChapter/' + chapterId, {}).then(value => {
-      this.setState({
-        content: value.context.replace(/&nbsp;/g, '  ').replace(/\n+/g, '\n'),
-        title: value.name,
-        chapter: value,
-        sliderShow: false,
-        sliderValue: value.sort,
-      });
-      this.scrollView.scrollTo({x: 0, y: 0, animated: true});
-      EasyLoading.dismiss();
-    });
-  };
-  setBgStyles = target => {
-    this.setState({
-      readStyle: {
-        bgStyles: {
-          backgroundColor: target.bgColor,
-        },
-        title: {
-          color: '#333',
-        },
-        content: {
-          color: '#333',
-        },
-      },
+    LocalStorageUtil.getItem('tokenId').then(tokenId => {
+      fetch
+        .get('fictionChapter/' + chapterId, {
+          tokenId: tokenId,
+        })
+        .then(value => {
+          this.setState({
+            content: value.data.context
+              .replace(/&nbsp;/g, '  ')
+              .replace(/\n+/g, '\n'),
+            title: value.data.name,
+            chapter: value.data,
+            sliderShow: false,
+            setVisible: false,
+            modalVisible: false,
+            sliderValue: value.data.sort,
+          });
+        })
+        .then(() => {
+          setTimeout(() => {
+            this.scrollView.scrollTo({x: 0, y: 0, animated: true});
+            EasyLoading.dismiss();
+          }, 200);
+        })
+        .catch(err => {
+          Toast.show(err.message, {
+            duration: Toast.durations.SHORT,
+            position: Toast.positions.CENTER,
+            shadow: true,
+            animation: true,
+            hideOnPress: true,
+            delay: 0,
+          });
+        });
     });
   };
   back = () => {
@@ -119,39 +122,13 @@ export default class ReadPage extends Component {
       modalVisible: true,
     });
   };
-  onFontSizeChange = activity => {
-    let newFontSizeStyle = Object.assign({}, this.state.fontSizeStyle);
-    if (activity === 'sub') {
-      for (let key in this.state.fontSizeStyle) {
-        newFontSizeStyle[key] -= this.state.thresholdFontSize;
-      }
-    } else {
-      for (let key in this.state.fontSizeStyle) {
-        newFontSizeStyle[key] += this.state.thresholdFontSize;
-      }
-    }
-    this.setState({
-      fontSizeStyle: newFontSizeStyle,
-    });
-  };
   /**
    * 日常夜间模式切换
    */
   onDayModeClick = () => {
-    let bgColor;
-    let fontColor;
-    if (this.state.isNight) {
-      bgColor = '#e4cba3';
-      fontColor = '#333';
-    } else {
-      bgColor = '#161616';
-      fontColor = '#4f5050';
-    }
-    this.setState({
-      isNight: !this.state.isNight,
-      bgColor: bgColor,
-      fontColor: fontColor,
-    });
+    this.props.ChangeTheme({
+      isNight: !this.props.isNight
+    })
   };
   getChapterItem(props) {
     return (
@@ -159,7 +136,7 @@ export default class ReadPage extends Component {
         style={{
           width: screenW * 0.8,
           height: screenW * 0.11,
-          backgroundColor: this.state.bgColor,
+          backgroundColor: this.props.bgColor,
         }}
         onPress={this.onChapterItemClick.bind(this, props)}>
         <Text
@@ -171,7 +148,7 @@ export default class ReadPage extends Component {
             color:
               this.state.sliderValue == props.sort
                 ? '#449bda'
-                : this.state.fontColor,
+                : this.props.fontColor,
           }}>
           第{props.sort}章. {props.name}
         </Text>
@@ -192,7 +169,7 @@ export default class ReadPage extends Component {
   onNextChapterClick = () => {
     let sliderValue = this.state.sliderValue;
     if (sliderValue >= this.state.chapters.length) {
-      let toast = Toast.show('文章已到末尾!', {
+      Toast.show('文章已到末尾!', {
         duration: Toast.durations.SHORT,
         position: Toast.positions.CENTER,
         shadow: true,
@@ -200,9 +177,6 @@ export default class ReadPage extends Component {
         hideOnPress: true,
         delay: 0,
       });
-      setTimeout(function() {
-        Toast.hide(toast);
-      }, 1000);
     } else {
       EasyLoading.show('加载中', -1);
       this.initReadPage(this.state.chapters[sliderValue].id);
@@ -212,7 +186,7 @@ export default class ReadPage extends Component {
   onBeforeChapterClick = () => {
     let sliderValue = this.state.sliderValue - 2;
     if (sliderValue < 0) {
-      let toast = Toast.show('文章已到头!', {
+      Toast.show('文章已到头!', {
         duration: Toast.durations.SHORT,
         position: Toast.positions.CENTER,
         shadow: true,
@@ -220,9 +194,6 @@ export default class ReadPage extends Component {
         hideOnPress: true,
         delay: 0,
       });
-      setTimeout(function() {
-        Toast.hide(toast);
-      }, 1000);
     } else {
       EasyLoading.show('加载中', -1);
       this.initReadPage(this.state.chapters[sliderValue].id);
@@ -245,15 +216,14 @@ export default class ReadPage extends Component {
     });
     setTimeout(() => {
       this._flatList.scrollToIndex({
-        // viewPosition: 0,
         animated: true,
-        index: this.state.chapter.sort - 1,
+        index: this.state.sliderValue - 1,
       });
     }, 1000);
   };
   render() {
     return (
-      <View style={{flex: 1, backgroundColor: this.state.bgColor}}>
+      <View style={{flex: 1, backgroundColor: this.props.bgColor}}>
         <Modal
           animationIn="slideInLeft"
           animationOut="slideOutLeft"
@@ -267,7 +237,7 @@ export default class ReadPage extends Component {
             style={{
               height: screenH,
               width: screenW * 0.8,
-              backgroundColor: this.state.bgColor,
+              backgroundColor: this.props.bgColor,
             }}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
             horizontal={false}
@@ -288,85 +258,72 @@ export default class ReadPage extends Component {
           isVisible={this.state.setVisible}
           onBackdropPress={() => this.setState({setVisible: false})}
           style={styles.menu}>
-          {/* <View
-            style={{
-              height: 20,
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: this.state.bgColor,
-            }}>
-            <Slider />
-          </View> */}
           <Line color="#fff" size={1} />
           <View
             style={{
               height: 60,
               flexDirection: 'row',
               alignItems: 'center',
-              backgroundColor: this.state.bgColor,
+              backgroundColor: this.props.bgColor,
             }}>
             <Text
               style={{
-                color: this.state.fontColor,
+                color: this.props.fontColor,
                 fontSize: this.state.fontSizeStyle.contentFontSize,
                 marginLeft: 10,
               }}>
               字号
             </Text>
-            <MyButton
-              style={{
-                right: 0,
-                position: 'absolute',
-                marginRight: 100,
-                borderWidth: 0.2,
-                borderColor: '#808080',
-                borderRadius: 3,
-              }}
-              fColor={this.state.fontColor}
-              bgColor={this.state.bgColor}
-              text="A－"
-              fontSize={this.state.fontSizeStyle.contentFontSize}
-              size={this.state.fontSizeStyle.contentFontSize}
-              onPress={() =>
-                this.setState({
-                  fontSizeStyle: {
-                    contentFontSize:
-                      this.state.fontSizeStyle.contentFontSize - 1,
-                  },
-                })
-              }
-            />
-            <Text
-              style={{
-                right: 0,
-                position: 'absolute',
-                marginRight: 72,
-              }}>
-              {this.state.fontSizeStyle.contentFontSize}
-            </Text>
-            <MyButton
-              style={{
-                left: 0,
-                position: 'absolute',
-                marginLeft: 300,
-                borderWidth: 0.2,
-                borderColor: '#808080',
-                borderRadius: 3,
-              }}
-              fColor={this.state.fontColor}
-              bgColor={this.state.bgColor}
-              text="A＋"
-              fontSize={this.state.fontSizeStyle.contentFontSize}
-              size={this.state.fontSizeStyle.contentFontSize}
-              onPress={() =>
-                this.setState({
-                  fontSizeStyle: {
-                    contentFontSize:
-                      this.state.fontSizeStyle.contentFontSize + 1,
-                  },
-                })
-              }
-            />
+            <View style={{
+              height: 60,
+              flex: 1,
+              flexDirection: 'row-reverse',
+              alignItems: 'center',
+              backgroundColor: this.props.bgColor,
+            }}>
+              <MyButton
+                style={{
+                  borderWidth: 0.2,
+                  borderColor: '#808080',
+                  borderRadius: 3,
+                  marginRight: 20
+                }}
+                fColor={this.props.fontColor}
+                bgColor={this.props.bgColor}
+                text="A－"
+                fontSize={this.state.fontSizeStyle.contentFontSize}
+                size={this.state.fontSizeStyle.contentFontSize}
+                onPress={() =>
+                  this.setState({
+                    fontSizeStyle: {
+                      contentFontSize:
+                        this.state.fontSizeStyle.contentFontSize - 1,
+                    },
+                  })
+                }
+              />
+              <MyButton
+                style={{
+                  borderWidth: 0.2,
+                  borderColor: '#808080',
+                  borderRadius: 3,
+                  marginRight: 20
+                }}
+                fColor={this.props.fontColor}
+                bgColor={this.props.bgColor}
+                text="A＋"
+                fontSize={this.state.fontSizeStyle.contentFontSize}
+                size={this.state.fontSizeStyle.contentFontSize}
+                onPress={() =>
+                  this.setState({
+                    fontSizeStyle: {
+                      contentFontSize:
+                        this.state.fontSizeStyle.contentFontSize + 1,
+                    },
+                  })
+                }
+              />
+            </View>
           </View>
         </Modal>
         <Modal
@@ -376,119 +333,111 @@ export default class ReadPage extends Component {
           backdropOpacity={0}
           style={styles.menu}>
           <View>
-            <Line color="#fff" size={1} />
+            <View style={{
+                backgroundColor: this.props.bgColor,
+              }}>
+              <Line color="#fff" size={1} />
+              <Text
+                style={{
+                  fontSize: this.state.fontSizeStyle.contentFontSize,
+                  color: this.props.fontColor,
+                  marginTop: 10,
+                  textAlign: 'center',
+                }}>
+                {this.state.title.length > 18
+                  ? this.state.title.substr(0, 18) + '...'
+                  : this.state.title}
+              </Text>
+            </View>
             <View
               style={{
-                height: 120,
+                height: 40,
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: this.state.bgColor,
+                backgroundColor: this.props.bgColor,
               }}>
               <MyButton
                 style={{
                   right: 0,
-                  marginRight: 270,
-                  position: 'absolute',
+                  marginLeft: 20,
                   borderWidth: 0.2,
                   borderColor: '#808080',
                   borderTopWidth: 0,
                   borderRadius: 3,
                 }}
-                fColor={this.state.fontColor}
-                bgColor={this.state.bgColor}
+                fColor={this.props.fontColor}
+                bgColor={this.props.bgColor}
                 text="上一章"
                 fontSize={this.state.fontSizeStyle.contentFontSize}
                 size={this.state.fontSizeStyle.contentFontSize}
                 onPress={this.onBeforeChapterClick}
               />
-              <Text
-                style={{
-                  fontSize: this.state.fontSizeStyle.contentFontSize,
-                  top: 10,
-                  right: 0,
-                  position: 'absolute',
-                  color: this.state.fontColor,
-                  marginRight:
-                    (screenW -
-                      this.state.title.length *
-                        this.state.fontSizeStyle.contentFontSize) /
-                    2,
-                }}>
-                {this.state.title}
-              </Text>
               <Slider
                 style={{
                   fontSize: this.state.fontSizeStyle.contentFontSize,
-                  top: 0,
-                  left: 0,
                   height: 20,
-                  width: 200,
-                  position: 'absolute',
-                  marginTop: 50,
-                  marginLeft: (screenW - 200) / 2,
+                  flex: 2
                 }}
                 step={1}
-                value={this.state.chapter.sort}
+                value={this.state.sliderValue}
                 minimumValue={1}
                 maximumValue={this.state.chapters.length}
                 onValueChange={this._sliderValueChange}
                 onSlidingComplete={this._sliderValueComplete}
               />
-              <Text
-                style={{
-                  fontSize: this.state.fontSizeStyle.contentFontSize,
-                  bottom: 0,
-                  left: 0,
-                  position: 'absolute',
-                  color: this.state.fontColor,
-                  marginBottom: 10,
-                  marginLeft:
-                    (screenW -
-                      this.state.fontSizeStyle.contentFontSize *
-                        (2 +
-                          this.state.sliderValue.toString.length +
-                          this.state.chapters[this.state.sliderValue - 1].name
-                            .length)) /
-                    2,
-                }}>
-                第{this.state.sliderValue}章:{'  '}
-                {this.state.chapters[this.state.sliderValue - 1].name}
-              </Text>
               <MyButton
                 style={{
                   fontSize: this.state.fontSizeStyle.contentFontSize,
-                  left: 0,
-                  position: 'absolute',
                   borderWidth: 0.2,
                   borderTopWidth: 0,
-                  marginLeft: 270,
+                  marginRight: 20,
                   borderColor: '#808080',
                   borderTopWidth: 0,
                   borderRadius: 3,
                 }}
-                fColor={this.state.fontColor}
-                bgColor={this.state.bgColor}
+                fColor={this.props.fontColor}
+                bgColor={this.props.bgColor}
                 text="下一章"
                 fontSize={this.state.fontSizeStyle.contentFontSize}
                 size={this.state.fontSizeStyle.contentFontSize}
                 onPress={this.onNextChapterClick}
               />
             </View>
+            <View style={{
+                backgroundColor: this.props.bgColor,
+              }}>
+              <Text
+                style={{
+                  fontSize: this.state.fontSizeStyle.contentFontSize,
+                  textAlign: 'center',
+                  color: this.props.fontColor,
+                  marginBottom: 10,
+                }}>
+                第{this.state.sliderValue}章:{'  '}
+                {this.state.chapters[this.state.sliderValue - 1].name.length >
+                14
+                  ? this.state.chapters[this.state.sliderValue - 1].name.substr(
+                      0,
+                      14,
+                    ) + '...'
+                  : this.state.chapters[this.state.sliderValue - 1].name}
+              </Text>
+            </View>
             <Line color="#fff" size={1} />
             <View
               style={{
                 height: 60,
                 flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: this.state.bgColor,
+                backgroundColor: this.props.bgColor,
+                alignItems: 'center'
               }}>
               <Text
                 style={{
                   fontSize: this.state.fontSizeStyle.contentFontSize,
-                  left: 0,
-                  position: 'absolute',
                   marginLeft: 10,
-                  color: this.state.fontColor,
+                  color: this.props.fontColor,
+                  flex: 1,       
+                  textAlign: 'left'
                 }}
                 onPress={this.openSlider}>
                 目录
@@ -496,12 +445,9 @@ export default class ReadPage extends Component {
               <Text
                 style={{
                   fontSize: this.state.fontSizeStyle.contentFontSize,
-                  right: 0,
-                  position: 'absolute',
-                  marginRight:
-                    (screenW - 2 * this.state.fontSizeStyle.contentFontSize) /
-                    2,
-                  color: this.state.fontColor,
+                  color: this.props.fontColor,
+                  flex: 1,
+                  textAlign: 'center'
                 }}
                 onPress={() =>
                   this.setState({setVisible: true, modalVisible: false})
@@ -511,22 +457,21 @@ export default class ReadPage extends Component {
               <Text
                 style={{
                   fontSize: this.state.fontSizeStyle.contentFontSize,
-                  right: 0,
-                  position: 'absolute',
                   marginRight: 10,
-                  color: this.state.fontColor,
+                  color: this.props.fontColor,
+                  flex: 1,
+                  textAlign: 'right'
                 }}
                 onPress={this.onDayModeClick}>
-                {this.state.isNight ? '白天' : '夜间'}
+                {this.props.isNight ? '白天' : '夜间'}
               </Text>
             </View>
           </View>
         </Modal>
         <NavigtionBar
           leftButton={
-            <TouchableOpacity style={{padding: 12}} onPress={this.back}>
+            <TouchableOpacity style={{flex: 1,}} onPress={this.back}>
               <Entypo
-                style={styles.chapterAddFont}
                 name={'chevron-thin-left'}
                 size={24}
                 color="#000"
@@ -534,18 +479,18 @@ export default class ReadPage extends Component {
             </TouchableOpacity>
           }
           navBar={{
-            backgroundColor: this.state.bgColor,
+            backgroundColor: this.props.bgColor,
           }}
           title={this.state.title}
-          titleStyle={{color: this.state.fontColor}}
+          titleStyle={{color: this.props.fontColor}}
           statusBar={{
-            backgroundColor: this.state.bgColor,
+            backgroundColor: this.props.bgColor,
           }}
         />
 
         <ScrollView
           style={{
-            backgroundColor: this.state.bgColor,
+            backgroundColor: this.props.bgColor,
           }}
           ref={view => {
             this.scrollView = view;
@@ -559,7 +504,7 @@ export default class ReadPage extends Component {
                   styles.content,
                   {
                     fontSize: this.state.fontSizeStyle.contentFontSize,
-                    color: this.state.fontColor,
+                    color: this.props.fontColor,
                   },
                 ]}>
                 {this.state.content}
@@ -572,3 +517,20 @@ export default class ReadPage extends Component {
     );
   }
 }
+
+const mapState = state => ({
+  isNight: state.ThemeReducer.get('isNight'),
+  bgColor: state.ThemeReducer.get('bgColor'),
+  fontColor: state.ThemeReducer.get('fontColor'),
+});
+
+const mapDispatch = dispatch => ({
+  ChangeTheme(param) {
+    dispatch(ChangeTheme(param));
+  }
+});
+
+export default connect(
+  mapState,
+  mapDispatch,
+)(ReadPage);

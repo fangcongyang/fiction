@@ -8,10 +8,11 @@
  * */
 
 import React from 'react';
-import {Header, ListItem} from 'react-native-elements';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import {ListItem, Avatar } from 'react-native-elements';
+import NavigtionBar from '../components/NavigationBar';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 import MainView from '../components/MainView';
-import {TouchableOpacity} from 'react-native';
+import {TouchableOpacity, Text} from 'react-native';
 import ImagePicker from 'react-native-image-crop-picker';
 import {connect} from 'react-redux';
 import config from '../config';
@@ -51,6 +52,10 @@ class UserView extends React.Component {
         }
       });
     });
+  };
+
+  back = () => {
+    this.props.navigation.goBack();
   };
 
   uploadImage = async mediaPath => {
@@ -95,60 +100,73 @@ class UserView extends React.Component {
   render() {
     return (
       <MainView style={{marginTop: 0}}>
-        <Header
-          placement="left"
-          leftComponent={
+        <NavigtionBar
+          titleStyle={{color: '#000'}}
+          leftButton={
             <TouchableOpacity
               onPress={() => {
                 this.props.navigation.goBack();
               }}>
-              <FontAwesome name={'angle-left'} size={20} color={'black'} />
+              <AntDesign
+                name={'left'}
+                size={20}
+                color="#000"
+              />
             </TouchableOpacity>
           }
-          centerComponent={{text: '个人信息', style: {color: 'black'}}}
-          containerStyle={{
+          navBar={{
             backgroundColor: 'rgb(238, 238, 238)',
-            justifyContent: 'space-around',
           }}
+          title={'个人信息'}
+          titleStyle={{alignItems: 'flex-start', fontSize: 16,}}
+          statusBar={{}}
         />
         <ListItem
-          rightAvatar={{
-            source: {uri: config.baseURL + '/' + this.props.user.avatar},
-          }}
-          title={'头像'}
-          bottomDivider
-          chevron
           onPress={this.uploadAvatar}
-        />
+          bottomDivider>
+          <ListItem.Content>
+            <ListItem.Title>头像</ListItem.Title>
+          </ListItem.Content>
+          <Avatar rounded source={{uri: config.baseURL + '/' + this.props.user.avatar}} />
+        </ListItem>
         <ListItem
-          title={'用户名'}
-          rightTitle={this.props.user.username}
           bottomDivider
-          chevron
           onPress={() => {
             this.props.navigation.navigate('ChangeName');
           }}
-        />
+        >
+          <ListItem.Content>
+            <ListItem.Title>用户名</ListItem.Title>
+          </ListItem.Content>
+          <Text>{this.props.user.realName}</Text>
+          <ListItem.Chevron />
+        </ListItem>
         <ListItem
-          title={'微信号'}
-          rightTitle={this.props.user.id}
-          bottomDivider
-          chevron
-        />
+          bottomDivider>
+          <ListItem.Content>
+            <ListItem.Title>邮箱号</ListItem.Title>
+          </ListItem.Content>
+          <Text>{this.props.user.email}</Text>
+          <ListItem.Chevron />
+        </ListItem>
         <ListItem
-          title={'二维码名片'}
-          rightIcon={<FontAwesome name={'qrcode'} size={20} color={'black'} />}
-          bottomDivider
-          chevron
-        />
+          bottomDivider>
+          <ListItem.Content>
+            <ListItem.Title>二维码名片</ListItem.Title>
+          </ListItem.Content>
+          <AntDesign name={'qrcode'} size={20} color={'black'} />
+          <ListItem.Chevron />
+        </ListItem>
         <ListItem
-          title={'更多'}
-          bottomDivider
-          chevron
           onPress={() => {
             this.props.navigation.navigate('UserMoreView');
           }}
-        />
+          bottomDivider>
+          <ListItem.Content>
+            <ListItem.Title>更多</ListItem.Title>
+          </ListItem.Content>
+          <ListItem.Chevron />
+        </ListItem>
       </MainView>
     );
   }

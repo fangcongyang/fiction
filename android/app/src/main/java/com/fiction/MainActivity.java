@@ -1,5 +1,10 @@
 package com.fiction;
 
+<<<<<<< HEAD
+=======
+import android.content.Intent;
+import android.content.res.Configuration;
+>>>>>>> 58a1f02... 代码提交
 import com.facebook.react.ReactActivity;
 
 public class MainActivity extends ReactActivity {
@@ -12,4 +17,15 @@ public class MainActivity extends ReactActivity {
   protected String getMainComponentName() {
     return "fiction";
   }
+<<<<<<< HEAD
+=======
+
+  @Override
+  public void onConfigurationChanged(Configuration newConfig) {
+    super.onConfigurationChanged(newConfig);
+    Intent intent = new Intent("onConfigurationChanged");
+    intent.putExtra("newConfig", newConfig);
+    this.sendBroadcast(intent);
+  }
+>>>>>>> 58a1f02... 代码提交
 }

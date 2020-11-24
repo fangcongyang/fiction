@@ -3,6 +3,8 @@ import NavigtionBar from '../../components/NavigationBar';
 import MainView from '../../components/MainView';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import MyButton from '../../components/Button';
+import LocalStorageUtil from '../../common/LocalStorageUtil';
+import Toast from 'react-native-root-toast';
 import {
   View,
   TouchableOpacity,
@@ -10,16 +12,11 @@ import {
   Text,
   StyleSheet,
   Dimensions,
-  Platform,
-  NativeModules,
 } from 'react-native';
 
-const {StatusBarManager} = NativeModules;
 const screenW = Dimensions.get('window').width;
 const screenH = Dimensions.get('window').height;
 const ImageWH = screenW * 0.35; // 图片大小
-const statusTarHeight = Platform.OS === 'ios' ? 20 : StatusBarManager.HEIGHT;
-const tarH = Platform.OS === 'ios' ? 44 : 50;
 
 const sortItemStyle = StyleSheet.create({
   item: {
@@ -77,8 +74,7 @@ const sortItemStyle = StyleSheet.create({
     marginTop: (screenH * 0.05 - 20) / 2,
   },
   button: {
-    marginTop: screenH * 0.55 - ImageWH * 0.2 - tarH - statusTarHeight,
-    marginLeft: screenW * 0.2,
+    marginBottom: 30,
     width: screenW * 0.6,
     borderRadius: 24,
     height: 30,
@@ -93,13 +89,30 @@ class Fiction extends Component {
     this.state = {
       fiction: [],
       fictionId: this.props.navigation.state.params.fictionId,
+      isCollect: false,
     };
   }
-  UNSAFE_componentWillMount() {
-    fetch.get('fiction/' + this.state.fictionId).then(value => {
-      this.setState({
-        fiction: value,
-      });
+  componentDidMount() {
+    LocalStorageUtil.getItem('tokenId').then(tokenId => {
+      fetch
+        .get('fiction/' + this.state.fictionId, {
+          tokenId: tokenId,
+        })
+        .then(value => {
+          this.setState({
+            fiction: value.data,
+            isCollect: value.data.collect,
+          });
+        }).catch(err => {
+          Toast.show(err.message, {
+            duration: Toast.durations.SHORT,
+            position: Toast.positions.CENTER,
+            shadow: true,
+            animation: true,
+            hideOnPress: true,
+            delay: 0,
+          });
+        });
     });
   }
   gotoChapterList = fictionId => {
@@ -108,11 +121,34 @@ class Fiction extends Component {
     });
   };
   back = () => {
-    this.props.navigation.goBack();
+    const {navigation} = this.props;
+    navigation.goBack();
+  };
+  onBackAndroid = () => {
+    const {navigation} = this.props;
+    if (this.props.navigation.state.params.isFictionList) {
+      navigation.state.params.onCollect(
+        this.state.fictionId,
+        this.state.isCollect,
+      );
+    }
+  };
+  collect = fiction => {
+    LocalStorageUtil.getItem('tokenId').then(tokenId => {
+      let formData = new FormData();
+      formData.append('fictionId', fiction.id);
+      formData.append('tokenId', tokenId);
+      fetch.post('userFiction', formData).then(() => {
+        this.setState({
+          isCollect: true,
+        });
+        this.onBackAndroid();
+      });
+    });
   };
   render() {
     let leftBackBtn = (
-      <TouchableOpacity style={{padding: 8}} onPress={this.back}>
+      <TouchableOpacity style={{paddingTop: 4, paddingBottom: 4, flex: 1,}} onPress={this.back}>
         <Image
           style={{width: 26, height: 26}}
           source={require('../../res/images/ic_arrow_back_white_36pt.png')}
@@ -137,13 +173,16 @@ class Fiction extends Component {
           />
           <Text style={sortItemStyle.name}>{this.state.fiction.name}</Text>
           <Text style={sortItemStyle.author}>
-            作者: {this.state.fiction.bookCount}
+            作者: {this.state.fiction.author}
           </Text>
           <Text style={sortItemStyle.author}>
-            字&nbsp;: {this.state.fiction.bookCount}
+            字数:{' '}
+            {this.state.fiction.wordCount >= 10000
+              ? (this.state.fiction.wordCount / 10000).toFixed(2) + '万'
+              : (this.state.fiction.wordCount / 1000).toFixed(2) + '千'}
           </Text>
           <Text style={sortItemStyle.author}>
-            评分: {this.state.fiction.bookCount}
+            评分: {this.state.fiction.score}
           </Text>
         </View>
         <View style={sortItemStyle.introduceItem}>
@@ -163,16 +202,19 @@ class Fiction extends Component {
             color="#000"
           />
         </TouchableOpacity>
-        <View style={{flex: 1}}>
-          <MyButton
-            style={sortItemStyle.button}
-            fColor="#fff"
-            bgColor="#38adfd"
-            size={screenW * 0.05}
-            text="加入书架"
-            onPress={() => {}}
-          />
-        </View>
+        {!this.state.isCollect ? (
+          <View style={{flex: 1, flexDirection: 'row',
+            justifyContent: 'center',alignItems: 'flex-end'}}>
+            <MyButton
+              style={sortItemStyle.button}
+              fColor="#fff"
+              bgColor="#38adfd"
+              size={screenW * 0.05}
+              text="加入书架"
+              onPress={this.collect.bind(this, this.state.fiction)}
+            />
+          </View>
+        ) : null}
       </MainView>
     );
   }

@@ -1,5 +1,4 @@
 let queryString = require('query-string');
-import {getItem} from './LocalStorageUtils';
 import {Platform} from 'react-native';
 import evn from '../utils/common';
 
@@ -9,26 +8,30 @@ function checkStatus(response) {
   if (response.status >= 200 && response.status < 300) {
     return response.json();
   } else {
-    let error = new Error(response.statusText);
-    error.response = response;
-    throw error;
+    throw new Error('请求接口失败!');
   }
 }
+
 function parseJSON(data) {
-  if (data.data.records) {
+  if (data.data && data.data.records) {
     data.data.records.forEach(value => {
       if (value.logo) {
         value.logo = evn.baseUrl + value.logo;
       }
     });
-    return data.data;
-  } else {
+  } else if (data.data) {
     let dataOne = data.data;
     if (dataOne.logo) {
       dataOne.logo = evn.baseUrl + dataOne.logo;
+    } else if (Array.isArray(dataOne)) {
+      dataOne.forEach(value => {
+        if (value.logo) {
+          value.logo = evn.baseUrl + value.logo;
+        }
+      })
     }
-    return dataOne;
-  }
+  } 
+  return data;
 }
 async function get(url, params) {
   url = evn.fetchUrl + url;
@@ -36,63 +39,57 @@ async function get(url, params) {
     url += `?${queryString.stringify(params)}`;
   }
   try {
-    return fetch(url, {
+    return Promise.race([fetch(url, {
       header: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-    })
+    }),new Promise(function(resolve,reject){
+      setTimeout(()=> reject(new Error('请求超时!')),15000)
+    })])
       .then(checkStatus)
       .then(parseJSON);
   } catch (e) {
-    throw new Error('get error');
+    throw new Error('请求接口失败!');
   }
 }
 
 async function post(url, body) {
-  let Access_Token = await getItem('Access_Token');
   let fetchOptions = {
     method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/x-www-form-urlencoded',
-      Access_Token: Access_Token ? Access_Token : '',
-      UserAgent: os,
-    },
-    body: JSON.stringify(body),
+    body: body,
   };
-  return fetch(url, fetchOptions)
-    .then(checkStatus)
-    .then(parseJSON);
+  
+  url = evn.fetchUrl + url;
+  return Promise.race([fetch(url, fetchOptions).then(checkStatus).then(parseJSON),new Promise(function(resolve,reject){
+    setTimeout(()=> reject(new Error('请求超时!')),15000)
+  })]);
 }
 
 async function del(url, params) {
   if (params) {
     url += `?${queryString.stringify(params)}`;
   }
-  let Access_Token = await getItem('Access_Token');
   let fetchOptions = {
     method: 'DELETE',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
-      Access_Token: Access_Token ? Access_Token : '',
       UserAgent: os,
     },
   };
+  url = evn.fetchUrl + url;
   return fetch(url, fetchOptions)
     .then(checkStatus)
     .then(parseJSON);
 }
 
 async function update(url, body) {
-  let Access_Token = await getItem('Access_Token');
   let fetchOptions = {
     method: 'PUT',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
-      Access_Token: Access_Token ? Access_Token : '',
       UserAgent: os,
     },
     body: JSON.stringify(body),
@@ -103,7 +100,6 @@ async function update(url, body) {
 }
 
 async function uploadFile(url, params, fileUrl, fileName) {
-  let Access_Token = await getItem('Access_Token');
   let data = new FormData();
   data.append('file', {
     uri: fileUrl,

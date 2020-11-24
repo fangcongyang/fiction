@@ -1,6 +1,6 @@
 /*
  * 文件名: AppContainer.js
- * 作者: liushun
+ * 作者: fangcy
  * 描述: APP 登录页
  * 修改人:
  * 修改时间:
@@ -40,7 +40,7 @@ class RegisterView extends React.Component {
     };
   }
 
-  componentWillReceiveProps(nextProps): void {
+  UNSAFE_componentWillReceiveProps(nextProps) {
     if (!nextProps.loading) {
       Toast.show(nextProps.tip, {
         duration: Toast.durations.SHORT,
@@ -52,7 +52,7 @@ class RegisterView extends React.Component {
     }
   }
 
-  componentDidMount(): void {
+  componentDidMount() {
     input.current.focus();
   }
 

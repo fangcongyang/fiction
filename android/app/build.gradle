@@ -15,10 +15,19 @@ import com.android.build.OutputFile
  *   // the name of the generated asset file containing your JS bundle
  *   bundleAssetName: "index.android.bundle",
  *
+<<<<<<< HEAD
  *   // the entry file for bundle generation
  *   entryFile: "index.android.js",
  *
  *   // https://facebook.github.io/react-native/docs/performance#enable-the-ram-format
+=======
+ *   // the entry file for bundle generation. If none specified and
+ *   // "index.android.js" exists, it will be used. Otherwise "index.js" is
+ *   // default. Can be overridden with ENTRY_FILE environment variable.
+ *   entryFile: "index.android.js",
+ *
+ *   // https://reactnative.dev/docs/performance#enable-the-ram-format
+>>>>>>> 58a1f02... 代码提交
  *   bundleCommand: "ram-bundle",
  *
  *   // whether to bundle JS and assets in debug mode
@@ -76,7 +85,10 @@ import com.android.build.OutputFile
  */
 
 project.ext.react = [
+<<<<<<< HEAD
     entryFile: "index.android.js",
+=======
+>>>>>>> 58a1f02... 代码提交
     enableHermes: false,  // clean and rebuild if changing
 ]
 
@@ -121,8 +133,11 @@ def enableHermes = project.ext.react.get("enableHermes", false);
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
+<<<<<<< HEAD
     aaptOptions.cruncherEnabled = false
     aaptOptions.useNewCruncher = false
+=======
+>>>>>>> 58a1f02... 代码提交
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -151,12 +166,15 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+<<<<<<< HEAD
     　　release {
             storeFile file('my-release-key.keystore')
             storePassword 'fangcy'
             keyAlias 'my-key-alias'
             keyPassword 'fangcy'
         }
+=======
+>>>>>>> 58a1f02... 代码提交
     }
     buildTypes {
         debug {
@@ -164,12 +182,20 @@ android {
         }
         release {
             // Caution! In production, you need to generate your own keystore file.
+<<<<<<< HEAD
             // see https://facebook.github.io/react-native/docs/signed-apk-android.
+=======
+            // see https://reactnative.dev/docs/signed-apk-android.
+>>>>>>> 58a1f02... 代码提交
             signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 58a1f02... 代码提交
     // applicationVariants are e.g. debug, release
     applicationVariants.all { variant ->
         variant.outputs.each { output ->
@@ -187,10 +213,32 @@ android {
 }
 
 dependencies {
+<<<<<<< HEAD
     implementation project(':react-native-vector-icons')
     implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation "com.facebook.react:react-native:+"  // From node_modules
 
+=======
+    implementation fileTree(dir: "libs", include: ["*.jar"])
+    //noinspection GradleDynamicVersion
+    implementation "com.facebook.react:react-native:+"  // From node_modules
+
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
+
+    debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}") {
+      exclude group:'com.facebook.fbjni'
+    }
+
+    debugImplementation("com.facebook.flipper:flipper-network-plugin:${FLIPPER_VERSION}") {
+        exclude group:'com.facebook.flipper'
+        exclude group:'com.squareup.okhttp3', module:'okhttp'
+    }
+
+    debugImplementation("com.facebook.flipper:flipper-fresco-plugin:${FLIPPER_VERSION}") {
+        exclude group:'com.facebook.flipper'
+    }
+
+>>>>>>> 58a1f02... 代码提交
     if (enableHermes) {
         def hermesPath = "../../node_modules/hermes-engine/android/";
         debugImplementation files(hermesPath + "hermes-debug.aar")
@@ -208,3 +256,7 @@ task copyDownloadableDepsToLibs(type: Copy) {
 }
 
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)
+<<<<<<< HEAD
+=======
+apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle");
+>>>>>>> 58a1f02... 代码提交
