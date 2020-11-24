@@ -1,7 +1,5 @@
 import actionTypes from './actionTypes';
 
-<<<<<<< HEAD
-=======
 // 首页
 // banner获取
 export function GetBannerList(data){
@@ -19,7 +17,6 @@ export function ChangeCurrentRoute(data) {
   };
 }
 
->>>>>>> 58a1f02... 代码提交
 export function LoginStart(data) {
   // 统一管理action
   return {
